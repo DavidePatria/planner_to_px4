@@ -72,18 +72,9 @@ bool SlowDown::closeEnough() {
 
 void SlowDown::cmdloopCallback(const ros::TimerEvent &event) {
 	const std::lock_guard<std::mutex> lock(mutex_);
-	// ROS_INFO("in cmd loop callback");
 
-	if (!traj_q_.empty() && closeEnough()) {
-		// actual_goal_ = traj_q_.front();
-		ROS_INFO("close enough");
-		// no conversion needed
-		// convert_mjt_pose_(actual_goal_, traj_q_.front());
-		// actual_goal_ = traj_q_.front();
-
-		// CONVERT LIKE ABOVE THE POINT
-		// quat_to_yaw(traj_q_.front().transforms[0].rotation., float &yaw)
-
+	// using this topic the points can be sent all at once
+	if(!traj_q_.empty()) {
 		ROS_INFO("pose converted");
 		traj_slow_pub_.publish(actual_goal_);
 		ROS_INFO("published traje");
