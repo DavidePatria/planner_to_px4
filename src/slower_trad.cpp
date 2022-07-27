@@ -2,17 +2,23 @@
 
 SlowDown::SlowDown(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private)
 	:nh_{nh},
-	nh_private_{nh_private_},
+	nh_private_{nh_private},
 	// this value below could be taken from a dynamic reconfigure server like
 	// in px4 avoidance
-	trigger_distance_{0.1}
+	trigger_distance_{0.1},
+	// initialize the mask of the message
+	velocity_mask{VELOCITY2D_CONTROL}
 	{
 	pose_sub_ = nh_.subscribe("/mavros/local_position/pose", 1, &SlowDown::poseCallback_, this, ros::TransportHints().tcpNoDelay());
 	goal_sub_ = nh_.subscribe("/command/trajectory", 1, &SlowDown::trajCallback_, this, ros::TransportHints().tcpNoDelay());
 	traj_slow_pub_ = nh_.advertise<mavros_msgs::PositionTarget>("/mavros/setpoint_raw/local", 1);
 
 	cmdloop_timer_ = nh_.createTimer(ros::Duration(0.10), &SlowDown::cmdloopCallback, this);
-	};
+	// the message is always the same one
+	actual_goal_.coordinate_frame = mavros_msgs::PositionTarget::FRAME_LOCAL_NED;
+	actual_goal_.type_mask = POSITION_CONTROL;
+	actual_goal_.header.frame_id = "map";
+};
 
 void SlowDown::poseCallback_(const geometry_msgs::PoseStamped& msg) {
 	// update internal pose

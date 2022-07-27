@@ -10,6 +10,10 @@
 
 #include <mavros_msgs/PositionTarget.h>
 
+// needed for the PositionTarget message
+#define VELOCITY2D_CONTROL 0b011111000011
+#define VELOCITY_CONTROL 0b011111000111
+#define POSITION_CONTROL 0b101111111000
 
 class SlowDown {
 
@@ -17,6 +21,7 @@ public:
 	SlowDown(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
 
 private:
+	unsigned short velocity_mask;
 	// for now copy the trajectory points using the callback
 	trajectory_msgs::MultiDOFJointTrajectory traj_;
 
