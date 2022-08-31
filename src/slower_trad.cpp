@@ -11,6 +11,7 @@ SlowDown::SlowDown(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private)
 	{
 	pose_sub_ = nh_.subscribe("/mavros/local_position/pose", 1, &SlowDown::poseCallback_, this, ros::TransportHints().tcpNoDelay());
 	goal_sub_ = nh_.subscribe("/command/trajectory", 1, &SlowDown::trajCallback_, this, ros::TransportHints().tcpNoDelay());
+
 	traj_slow_pub_ = nh_.advertise<mavros_msgs::PositionTarget>("/mavros/setpoint_raw/local", 1);
 
 	cmdloop_timer_ = nh_.createTimer(ros::Duration(0.10), &SlowDown::cmdloopCallback, this);
@@ -59,22 +60,22 @@ void SlowDown::convert_mdjt_pt(const trajectory_msgs::MultiDOFJointTrajectoryPoi
 	quat_to_yaw(point.transforms[0].rotation, target.yaw);
 }
 
-bool SlowDown::closeEnough() {
-	float x, y, z;
-	ROS_INFO("close enough?");
-	// ROS_INFO("esempio di valore: %f", actual_goal_.transforms[0].translation.x);
-	x = pose_.position.x - actual_goal_.position.x;
-	y = pose_.position.y - actual_goal_.position.y;
-	z = pose_.position.z - actual_goal_.position.z;
-	// should a check on yaw be added?
-
-	// if the drone is close enough to the actual goal by L2 norm
-	if(std::sqrt(x*x + y*y + z*z) < trigger_distance_) {
-		return true;
-	} else {
-		return false;
-	}
-}
+// bool SlowDown::closeEnough() {
+// 	float x, y, z;
+// 	ROS_INFO("close enough?");
+// 	// ROS_INFO("esempio di valore: %f", actual_goal_.transforms[0].translation.x);
+// 	x = pose_.position.x - actual_goal_.position.x;
+// 	y = pose_.position.y - actual_goal_.position.y;
+// 	z = pose_.position.z - actual_goal_.position.z;
+// 	// should a check on yaw be added?
+//
+// 	// if the drone is close enough to the actual goal by L2 norm
+// 	if(std::sqrt(x*x + y*y + z*z) < trigger_distance_) {
+// 		return true;
+// 	} else {
+// 		return false;
+// 	}
+// }
 
 void SlowDown::cmdloopCallback(const ros::TimerEvent &event) {
 	const std::lock_guard<std::mutex> lock(mutex_);
@@ -83,6 +84,10 @@ void SlowDown::cmdloopCallback(const ros::TimerEvent &event) {
 	if(!traj_q_.empty()) {
 		ROS_INFO("pose converted");
 		traj_slow_pub_.publish(actual_goal_);
+		// 10hz required for offboard to be kept, slow done message publishing
+		ros::Rate rate{3};
+		rate.sleep();
+
 		ROS_INFO("published traje");
 		traj_q_.pop();
 		ROS_INFO("popped");
